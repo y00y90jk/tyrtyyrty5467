@@ -1,21 +1,20 @@
+// Enhanced Claimer.me JavaScript
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize AOS animations - reduce duration for mobile
+  // Initialize AOS animations
   AOS.init({
-    duration: window.innerWidth < 768 ? 500 : 800,
+    duration: 800,
     once: true,
-    offset: 30,
-    delay: 50,
-    easing: 'ease-in-out',
-    disable: 'phone' // Disable on very small screens to improve performance
+    offset: 50,
+    delay: 100,
+    easing: 'ease-in-out'
   });
 
-  // Initialize particles background with reduced particle count for mobile
+  // Initialize particles background
   if (document.getElementById('particles-js')) {
-    const particleCount = window.innerWidth < 768 ? 30 : 80;
     particlesJS('particles-js', {
       particles: {
         number: {
-          value: particleCount,
+          value: 80,
           density: {
             enable: true,
             value_area: 800
@@ -36,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
           random: true,
           anim: {
             enable: true,
-            speed: 0.8, // Reduced for mobile
+            speed: 1,
             opacity_min: 0.1,
             sync: false
           }
@@ -46,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
           random: true,
           anim: {
             enable: false,
-            speed: 20, // Reduced speed for mobile
+            speed: 40,
             size_min: 0.1,
             sync: false
           }
@@ -60,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         move: {
           enable: true,
-          speed: window.innerWidth < 768 ? 1 : 2, // Slower on mobile
+          speed: 2,
           direction: 'none',
           random: false,
           straight: false,
@@ -77,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         detect_on: 'canvas',
         events: {
           onhover: {
-            enable: window.innerWidth >= 768, // Disable hover effects on mobile
+            enable: true,
             mode: 'grab'
           },
           onclick: {
@@ -94,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           },
           push: {
-            particles_nb: 2 // Reduced for mobile
+            particles_nb: 4
           }
         }
       },
@@ -109,11 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let allUsernames = [];
   let filteredUsernames = [];
   let currentPage = 1;
-  const itemsPerPage = window.innerWidth < 768 ? 6 : 12; // Fewer items per page on mobile
+  const itemsPerPage = 12;
   let currentFilter = 'all';
   let currentSort = 'recent';
+  // New flag to track if we're in a search/filter operation
   let isSearching = false;
-  let touchStartY = 0; // For detecting vertical scroll on mobile
   
   // DOM Elements
   const cardsContainer = document.querySelector('.username-cards');
@@ -136,87 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggle = document.getElementById('theme-toggle');
   const backToTopBtn = document.getElementById('back-to-top');
   const faqItems = document.querySelectorAll('.faq-item');
-  const filterToggle = document.getElementById('filter-toggle') || document.createElement('div');
-  const filterPanel = document.querySelector('.filter-panel') || document.createElement('div');
-  
-  // Create filter toggle button for mobile if it doesn't exist
-  if (!document.getElementById('filter-toggle') && searchForm) {
-    const toggleBtn = document.createElement('button');
-    toggleBtn.id = 'filter-toggle';
-    toggleBtn.className = 'filter-toggle-btn';
-    toggleBtn.innerHTML = '<i class="fas fa-filter"></i> Filters';
-    searchForm.parentNode.insertBefore(toggleBtn, searchForm);
-    
-    // Create and append mobile filter panel if it doesn't exist
-    if (!document.querySelector('.filter-panel')) {
-      const panel = document.createElement('div');
-      panel.className = 'filter-panel';
-      panel.innerHTML = `
-        <div class="filter-panel-header">
-          <h3>Filter Options</h3>
-          <button class="filter-close"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="filter-panel-content"></div>
-        <div class="filter-panel-footer">
-          <button class="btn btn-primary apply-filters">Apply Filters</button>
-          <button class="btn btn-outline reset-filters">Reset</button>
-        </div>
-      `;
-      document.body.appendChild(panel);
-      
-      // Move filter elements to the panel on mobile
-      if (window.innerWidth < 768 && searchForm) {
-        const filterContent = panel.querySelector('.filter-panel-content');
-        // Clone the filter elements instead of moving them, to maintain both views
-        const filtersToClone = searchForm.querySelectorAll('.form-group');
-        filtersToClone.forEach(filter => {
-          const clone = filter.cloneNode(true);
-          filterContent.appendChild(clone);
-        });
-        
-        // Setup event listeners for mobile filter panel
-        const closeBtn = panel.querySelector('.filter-close');
-        const applyBtn = panel.querySelector('.apply-filters');
-        const resetBtn = panel.querySelector('.reset-filters');
-        
-        closeBtn.addEventListener('click', () => {
-          panel.classList.remove('active');
-          document.body.classList.remove('no-scroll');
-        });
-        
-        applyBtn.addEventListener('click', () => {
-          // Sync the main form values with panel values
-          const panelInputs = panel.querySelectorAll('select, input');
-          panelInputs.forEach(input => {
-            const mainInput = searchForm.querySelector(`#${input.id}`);
-            if (mainInput) {
-              mainInput.value = input.value;
-            }
-          });
-          
-          isSearching = true;
-          currentPage = 1;
-          displayUsernames();
-          panel.classList.remove('active');
-          document.body.classList.remove('no-scroll');
-          showToast('Filters Applied', 'Your search results have been updated', 'success');
-        });
-        
-        resetBtn.addEventListener('click', () => {
-          resetFilters();
-          panel.classList.remove('active');
-          document.body.classList.remove('no-scroll');
-        });
-        
-        // Update filter toggle reference
-        const filterToggle = document.getElementById('filter-toggle');
-        filterToggle.addEventListener('click', () => {
-          panel.classList.add('active');
-          document.body.classList.add('no-scroll');
-        });
-      }
-    }
-  }
   
   // Theme Management
   function initTheme() {
@@ -244,133 +162,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  // Navigation Handling - Improved for mobile
+  // Navigation Handling
   function initNavigation() {
-    // Mobile menu toggle with improved touch handling
-    mobileMenuToggle.addEventListener('click', (e) => {
-      e.preventDefault(); // Prevent any default behavior
+    // Mobile menu toggle
+    mobileMenuToggle.addEventListener('click', () => {
       mobileMenuToggle.classList.toggle('active');
       mobileMenu.classList.toggle('active');
       document.body.classList.toggle('no-scroll');
     });
     
-    // Close menu when tapping outside
-    document.addEventListener('click', (e) => {
-      if (mobileMenu.classList.contains('active') && 
-          !mobileMenu.contains(e.target) && 
-          !mobileMenuToggle.contains(e.target)) {
+    // Mobile menu links
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
         mobileMenuToggle.classList.remove('active');
         mobileMenu.classList.remove('active');
         document.body.classList.remove('no-scroll');
-      }
-    });
-    
-    // Mobile menu links - improved touch handling
-    mobileLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        // Only prevent default for hash links to allow smooth scrolling
-        if (link.getAttribute('href').startsWith('#')) {
-          e.preventDefault();
-          const targetId = link.getAttribute('href').substring(1);
-          const targetElement = document.getElementById(targetId);
-          
-          if (targetElement) {
-            mobileMenuToggle.classList.remove('active');
-            mobileMenu.classList.remove('active');
-            document.body.classList.remove('no-scroll');
-            
-            // Smooth scroll with offset for fixed header
-            const headerOffset = 80;
-            const elementPosition = targetElement.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-            
-            window.scrollTo({
-              top: offsetPosition,
-              behavior: 'smooth'
-            });
-          }
-        }
       });
     });
     
-    // Throttled scroll handling for better performance
-    let lastScrollTime = 0;
+    // Scroll handling for nav
     window.addEventListener('scroll', () => {
-      if (Date.now() - lastScrollTime > 100) { // Throttle to 10 times per second max
-        lastScrollTime = Date.now();
+      const nav = document.querySelector('.main-nav');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+        backToTopBtn.classList.add('visible');
+      } else {
+        nav.classList.remove('scrolled');
+        backToTopBtn.classList.remove('visible');
+      }
+      
+      // Active nav link based on scroll position
+      const sections = document.querySelectorAll('section[id]');
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 100;
+        const sectionBottom = sectionTop + section.offsetHeight;
+        const scrollPosition = window.scrollY;
         
-        const nav = document.querySelector('.main-nav');
-        if (window.scrollY > 30) { // Reduced threshold for mobile
-          nav.classList.add('scrolled');
-          backToTopBtn.classList.add('visible');
-        } else {
-          nav.classList.remove('scrolled');
-          backToTopBtn.classList.remove('visible');
-        }
-        
-        // Active nav link based on scroll position - optimized
-        const sections = document.querySelectorAll('section[id]');
-        let currentSectionId = '';
-        
-        sections.forEach(section => {
-          const sectionTop = section.offsetTop - 100;
-          const sectionBottom = sectionTop + section.offsetHeight;
-          const scrollPosition = window.scrollY;
-          
-          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-            currentSectionId = section.getAttribute('id');
-          }
-        });
-        
-        if (currentSectionId) {
+        if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+          const id = section.getAttribute('id');
           navLinks.forEach(link => {
             link.classList.remove('active');
-            if (link.getAttribute('href') === `#${currentSectionId}`) {
+            if (link.getAttribute('href') === `#${id}`) {
               link.classList.add('active');
             }
           });
           
           mobileLinks.forEach(link => {
             link.classList.remove('active');
-            if (link.getAttribute('href') === `#${currentSectionId}`) {
+            if (link.getAttribute('href') === `#${id}`) {
               link.classList.add('active');
             }
           });
         }
-      }
-    }, { passive: true }); // Add passive flag for better performance
+      });
+    });
     
-    // Improved back to top button for mobile
-    backToTopBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      
-      // Use requestAnimationFrame for smoother scrolling on mobile
-      const scrollToTop = () => {
-        const position = window.pageYOffset;
-        if (position > 0) {
-          window.scrollTo(0, position - Math.max(20, position / 10));
-          requestAnimationFrame(scrollToTop);
-        }
-      };
-      
-      // Check if browser supports smooth scrolling
-      if ('scrollBehavior' in document.documentElement.style) {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      } else {
-        // Fallback for browsers without smooth scrolling
-        requestAnimationFrame(scrollToTop);
-      }
+    // Back to top button
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
   }
   
-  // Toast Notifications - Modified for better mobile experience
+  // Toast Notifications
   function showToast(title, message, type = 'success') {
-    const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+    const toastContainer = document.querySelector('.toast-container');
     const toast = document.createElement('div');
-    toast.classList.add('toast', 'mobile-friendly');
+    toast.classList.add('toast');
     
     let iconClass = 'fa-check-circle';
     if (type === 'error') iconClass = 'fa-times-circle';
@@ -384,40 +244,28 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="toast-title">${title}</div>
         <div class="toast-message">${message}</div>
       </div>
-      <button class="toast-close" aria-label="Close">
+      <button class="toast-close">
         <i class="fas fa-times"></i>
       </button>
     `;
     
     toastContainer.appendChild(toast);
     
-    // Animate in with a slight delay for mobile
+    // Animate in
     setTimeout(() => {
       toast.classList.add('show');
     }, 10);
     
-    // Make toast dismissible by tapping anywhere on it (mobile friendly)
-    toast.addEventListener('click', (e) => {
-      // Only dismiss if we didn't click on a button within the toast
-      if (!e.target.closest('button:not(.toast-close)')) {
-        toast.classList.remove('show');
-        setTimeout(() => {
-          toast.remove();
-        }, 300);
-      }
-    });
-    
     // Set up close button
     const closeBtn = toast.querySelector('.toast-close');
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent double handling from the toast click event
+    closeBtn.addEventListener('click', () => {
       toast.classList.remove('show');
       setTimeout(() => {
         toast.remove();
       }, 300);
     });
     
-    // Auto close after 4 seconds on mobile, 5 on desktop
+    // Auto close after 5 seconds
     setTimeout(() => {
       if (toast.parentNode) {
         toast.classList.remove('show');
@@ -427,18 +275,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }, 300);
       }
-    }, window.innerWidth < 768 ? 4000 : 5000);
+    }, 5000);
   }
   
-  // Create toast container if it doesn't exist
-  function createToastContainer() {
-    const container = document.createElement('div');
-    container.className = 'toast-container';
-    document.body.appendChild(container);
-    return container;
-  }
-  
-  // FAQ Accordion - Improved for mobile touch
+  // FAQ Accordion
   function initFaqAccordion() {
     faqItems.forEach(item => {
       const question = item.querySelector('.faq-question');
@@ -447,80 +287,45 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Close all items
         faqItems.forEach(faq => {
+          faq.classList.remove('active');
           const answer = faq.querySelector('.faq-answer');
-          // Use height transition for smoother animation on mobile
-          if (faq !== item || !isActive) {
-            answer.style.maxHeight = '0';
-            faq.classList.remove('active');
-          }
+          answer.style.maxHeight = '0';
         });
         
         // If it wasn't active, open it
         if (!isActive) {
           item.classList.add('active');
           const answer = item.querySelector('.faq-answer');
-          // Set max-height for transition
           answer.style.maxHeight = answer.scrollHeight + 'px';
         }
       });
     });
   }
   
-  // API Data Fetching - Improved with better error handling for mobile networks
+  // API Data Fetching - Modified to use ApiService
   async function fetchUsernames() {
     showLoading(true);
     isSearching = false; // Reset the flag when initially fetching usernames
     
-    let retryCount = 0;
-    const maxRetries = 3;
-    const fetchWithRetry = async () => {
-      try {
-        // Add a cache-busting parameter for mobile networks
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/api/usernames?_=${timestamp}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          timeout: 10000 // 10 second timeout for mobile networks
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // If successful
-        if (data && data.data && data.data.length > 0) {
-          processUsernameData(data.data);
-        } else {
-          // If API returns empty data
-          processUsernameData(SAMPLE_DATA);
-        }
-      } catch (error) {
-        console.error('Error fetching usernames:', error);
-        
-        // Retry logic for mobile networks
-        if (retryCount < maxRetries) {
-          retryCount++;
-          showToast('Connection Issue', `Retrying... (${retryCount}/${maxRetries})`, 'info');
-          
-          // Exponential backoff for retries
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          return fetchWithRetry();
-        } else {
-          // Use sample data as fallback after retries
-          processUsernameData(SAMPLE_DATA);
-          showToast('Connection Issue', 'Using cached data instead', 'info');
-        }
-      } finally {
-        showLoading(false);
+    try {
+      // Use ApiService's fetchUsernames method instead of direct API call
+      const data = await ApiService.fetchUsernames();
+      
+      // If successful
+      if (data && data.data && data.data.length > 0) {
+        processUsernameData(data.data);
+      } else {
+        // If API returns empty data
+        processUsernameData(SAMPLE_DATA);
       }
-    };
-    
-    await fetchWithRetry();
+    } catch (error) {
+      console.error('Error fetching usernames:', error);
+      // Use sample data as fallback
+      processUsernameData(SAMPLE_DATA);
+      showToast('Connection Issue', 'Using sample data instead', 'info');
+    } finally {
+      showLoading(false);
+    }
   }
   
   function processUsernameData(data) {
@@ -551,13 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
     displayFeaturedUsernames(); // This now handles both featured usernames and scrolling usernames
   }
   
-  // Username Display Functions - Improved for mobile
+  // Username Display Functions
   function displayUsernames() {
-    if (!cardsContainer) return;
-    
-    // Remember scroll position before clearing container
-    const scrollPos = window.pageYOffset;
-    
     cardsContainer.innerHTML = '';
     filteredUsernames = filterUsernames();
     
@@ -581,21 +381,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const resetBtn = cardsContainer.querySelector('.reset-filters');
       if (resetBtn) {
-        resetBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          resetFilters();
-        });
+        resetBtn.addEventListener('click', resetFilters);
       }
     } else {
-      // Batch DOM operations for better performance
-      const fragment = document.createDocumentFragment();
-      
       displayedUsernames.forEach(item => {
         const card = createUsernameCard(item);
-        fragment.appendChild(card);
+        cardsContainer.appendChild(card);
       });
-      
-      cardsContainer.appendChild(fragment);
       
       // Add buy now button event listeners
       addBuyNowEventListeners();
@@ -606,26 +398,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Toggle load more button
     toggleLoadMoreButton();
-    
-    // Only restore scroll position if we're not on the first page and not searching
-    if (currentPage > 1 && !isSearching) {
-      window.scrollTo(0, scrollPos);
-    }
-    
-    // Re-enable any animations that might have been disabled
-    if (!isSearching && window.innerWidth >= 768) {
-      AOS.refresh();
-    }
   }
   
   function createUsernameCard(item) {
     const card = document.createElement('div');
     card.className = 'card';
     
-    // Only add animation attributes during initial data load and on desktop
-    if (!isSearching && window.innerWidth >= 768) {
+    // Only add animation attributes during initial data load, not during filtering
+    if (!isSearching) {
       card.setAttribute('data-aos', 'fade-up');
-      card.setAttribute('data-aos-delay', (Math.random() * 200).toString());
+      card.setAttribute('data-aos-delay', (Math.random() * 300).toString());
     }
     
     // Determine badge class
@@ -641,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Format price with commas
     const formattedPrice = item.price.toLocaleString();
     
-    // Set card HTML - improved for mobile touch targets
+    // Set card HTML
     card.innerHTML = `
       <div class="type-badge ${badgeClass}">${item.category}</div>
       <h2 class="username">@${item.username}</h2>
@@ -653,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <button class="buy-now" data-id="${item.id}" data-username="${item.username}" data-price="${item.price}" data-category="${item.category}">
         <i class="fas fa-shopping-cart"></i>
-        <span class="btn-text">Buy Now</span>
+        Buy Now
       </button>
     `;
     
@@ -668,21 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Sort all usernames by price (highest to lowest)
       const sortedUsernames = [...allUsernames].sort((a, b) => b.price - a.price);
       
-      // Limit number of featured items on mobile for performance
-      const maxFeaturedItems = window.innerWidth < 768 ? 10 : sortedUsernames.length;
-      const featureItems = sortedUsernames.slice(0, maxFeaturedItems);
-      
-      if (featureItems.length > 0) {
-        // Batch DOM updates
-        const fragment = document.createDocumentFragment();
-        
-        featureItems.forEach(item => {
+      // Use all usernames instead of only filtering for featured
+      if (sortedUsernames.length > 0) {
+        sortedUsernames.forEach(item => {
           const card = createUsernameCard(item);
           card.classList.add('featured-card');
-          fragment.appendChild(card);
+          featuredSliderTrack.appendChild(card);
         });
-        
-        featuredSliderTrack.appendChild(fragment);
         
         // Add buy now button event listeners
         addBuyNowEventListeners();
@@ -691,12 +465,12 @@ document.addEventListener('DOMContentLoaded', () => {
         initFeaturedSlider();
         
         // Update scrolling usernames to match
-        updateScrollingUsernames(featureItems);
+        updateScrollingUsernames(sortedUsernames);
       }
     }
   }
   
-  // New function to update scrolling usernames - optimized for mobile
+  // New function to update scrolling usernames
   function updateScrollingUsernames(usernames) {
     const scrollingContainers = document.querySelectorAll('.username-scroll');
     
@@ -706,27 +480,21 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
       });
       
-      // Limit number of scrolling usernames on mobile for performance
-      const maxScroll = window.innerWidth < 768 ? 15 : usernames.length;
-      const scrollItems = usernames.slice(0, maxScroll);
-      
-      // Add usernames from the featured section
-      const fragment = document.createDocumentFragment();
-      
-      scrollItems.forEach(item => {
+      // Add all usernames from the featured section
+      usernames.forEach(item => {
         const usernameSpan = document.createElement('span');
         usernameSpan.textContent = `@${item.username}`;
-        fragment.appendChild(usernameSpan);
-      });
-      
-      // Add to both scrolling containers
-      scrollingContainers.forEach(container => {
-        container.appendChild(fragment.cloneNode(true));
+        
+        // Add to both scrolling containers (original and clone for infinite scroll)
+        scrollingContainers.forEach(container => {
+          const clone = usernameSpan.cloneNode(true);
+          container.appendChild(clone);
+        });
       });
     }
   }
   
-  // Featured Slider Controls - Optimized for mobile
+  // Featured Slider Controls
   function initFeaturedSlider() {
     const featuredSliderTrack = document.querySelector('.featured-slider-track');
     const featuredNextBtn = document.querySelector('.featured-control.next');
@@ -739,16 +507,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let maxSlides = 0;
     let slideWidth = 0;
     let autoSlideInterval;
-    let isTouching = false;
     
     // Calculate how many slides to show based on viewport width
     function calculateSlidesPerView() {
       const viewportWidth = window.innerWidth;
       
-      if (viewportWidth < 480) {
+      if (viewportWidth < 768) {
         slidesPerView = 1;
-      } else if (viewportWidth < 768) {
-        slidesPerView = 1.5; // Show partial next slide on mobile
       } else if (viewportWidth < 992) {
         slidesPerView = 2;
       } else if (viewportWidth < 1200) {
@@ -773,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
       slideWidth = firstSlide.offsetWidth + marginRight;
       
       // Calculate maximum slide position
-      maxSlides = Math.max(0, slides.length - Math.floor(slidesPerView));
+      maxSlides = Math.max(0, slides.length - slidesPerView);
       
       // If we're past the max slides after a resize, adjust current position
       if (currentSlide > maxSlides) {
@@ -794,11 +559,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Loop animation when reaching the end
     function animateSliderReset(direction) {
-      featuredSliderTrack.style.transition = 'transform 0.3s ease'; // Faster on mobile
+      featuredSliderTrack.style.transition = 'transform 0.4s ease';
       
       if (direction === 'next') {
         // Animate slightly past the end
-        featuredSliderTrack.style.transform = `translateX(${-maxSlides * slideWidth - 30}px)`;
+        featuredSliderTrack.style.transform = `translateX(${-maxSlides * slideWidth - 50}px)`;
         
         // Then reset to beginning
         setTimeout(() => {
@@ -806,12 +571,12 @@ document.addEventListener('DOMContentLoaded', () => {
           currentSlide = 0;
           updateSliderPosition();
           setTimeout(() => {
-            featuredSliderTrack.style.transition = 'transform 0.3s ease';
-          }, 30);
-        }, 300);
+            featuredSliderTrack.style.transition = 'transform 0.4s ease';
+          }, 50);
+        }, 400);
       } else {
         // Animate slightly before the beginning
-        featuredSliderTrack.style.transform = 'translateX(30px)';
+        featuredSliderTrack.style.transform = 'translateX(50px)';
         
         // Then reset to end
         setTimeout(() => {
@@ -819,29 +584,24 @@ document.addEventListener('DOMContentLoaded', () => {
           currentSlide = maxSlides;
           updateSliderPosition();
           setTimeout(() => {
-            featuredSliderTrack.style.transition = 'transform 0.3s ease';
-          }, 30);
-        }, 300);
+            featuredSliderTrack.style.transition = 'transform 0.4s ease';
+          }, 50);
+        }, 400);
       }
     }
     
-    // Start auto-slide functionality - slower on mobile
+    // Start auto-slide functionality
     function startAutoSlide() {
       stopAutoSlide(); // Clear any existing interval first
       
-      // Longer interval on mobile to give time to interact
-      const interval = window.innerWidth < 768 ? 7000 : 5000;
-      
       autoSlideInterval = setInterval(() => {
-        if (!isTouching) { // Don't auto-advance while user is touching
-          if (currentSlide < maxSlides) {
-            currentSlide++;
-          } else {
-            currentSlide = 0;
-          }
-          updateSliderPosition();
+        if (currentSlide < maxSlides) {
+          currentSlide++;
+        } else {
+          currentSlide = 0;
         }
-      }, interval);
+        updateSliderPosition();
+      }, 5000);
     }
     
     // Stop auto-slide functionality
@@ -851,11 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    // Next button click handler - improved for touch
-    featuredNextBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
+    // Next button click handler
+    featuredNextBtn.addEventListener('click', () => {
       if (currentSlide < maxSlides) {
         currentSlide++;
         updateSliderPosition();
@@ -865,378 +622,375 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     
-    // Previous button click handler - improved for touch
-    featuredPrevBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
+    // Previous button click handler
+    featuredPrevBtn.addEventListener('click', () => {
       if (currentSlide > 0) {
         currentSlide--;
         updateSliderPosition();
       } else {
-          // Loop to end with animation
-          animateSliderReset('prev');
-        }
-      });
-      
-      // Pause auto-slide on hover
-      featuredSliderTrack.addEventListener('mouseenter', stopAutoSlide);
-      featuredSliderTrack.addEventListener('mouseleave', startAutoSlide);
-      
-      // Recalculate on window resize
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        // Debounce the resize event
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          calculateSlidesPerView();
-        }, 200);
-      });
-      
-      // Initialize the slider
-      calculateSlidesPerView();
+        // Loop to end with animation
+        animateSliderReset('prev');
+      }
+    });
+    
+    // Pause auto-slide on hover
+    featuredSliderTrack.addEventListener('mouseenter', stopAutoSlide);
+    featuredSliderTrack.addEventListener('mouseleave', startAutoSlide);
+    
+    // Recalculate on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      // Debounce the resize event
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        calculateSlidesPerView();
+      }, 200);
+    });
+    
+    // Initialize the slider
+    calculateSlidesPerView();
+    startAutoSlide();
+    
+    // Add touch swipe support for mobile
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    featuredSliderTrack.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      stopAutoSlide();
+    }, { passive: true });
+    
+    featuredSliderTrack.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
       startAutoSlide();
-      
-      // Add touch swipe support for mobile
-      let touchStartX = 0;
-      let touchEndX = 0;
-      
-      featuredSliderTrack.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-        stopAutoSlide();
-      }, { passive: true });
-      
-      featuredSliderTrack.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-        startAutoSlide();
-      }, { passive: true });
-      
-      function handleSwipe() {
-        const minSwipeDistance = 50;
-        if (touchStartX - touchEndX > minSwipeDistance) {
-          // Swipe left - next slide
-          if (currentSlide < maxSlides) {
-            currentSlide++;
-            updateSliderPosition();
-          }
-        } else if (touchEndX - touchStartX > minSwipeDistance) {
-          // Swipe right - previous slide
-          if (currentSlide > 0) {
-            currentSlide--;
-            updateSliderPosition();
-          }
+    }, { passive: true });
+    
+    function handleSwipe() {
+      const minSwipeDistance = 50;
+      if (touchStartX - touchEndX > minSwipeDistance) {
+        // Swipe left - next slide
+        if (currentSlide < maxSlides) {
+          currentSlide++;
+          updateSliderPosition();
+        }
+      } else if (touchEndX - touchStartX > minSwipeDistance) {
+        // Swipe right - previous slide
+        if (currentSlide > 0) {
+          currentSlide--;
+          updateSliderPosition();
         }
       }
-      
-      // Return public methods for external access
-      return {
-        recalculate: calculateSlidesPerView,
-        next: () => {
-          if (currentSlide < maxSlides) {
-            currentSlide++;
-            updateSliderPosition();
-          }
-        },
-        prev: () => {
-          if (currentSlide > 0) {
-            currentSlide--;
-            updateSliderPosition();
-          }
-        }
-      };
     }
     
-    // Filtering & Sorting
-    function filterUsernames() {
-      const searchTerm = usernameSearch.value.toLowerCase();
-      const lengthFilter = lengthSelect.value;
-      const priceFilter = priceSelect.value;
+    // Return public methods for external access
+    return {
+      recalculate: calculateSlidesPerView,
+      next: () => {
+        if (currentSlide < maxSlides) {
+          currentSlide++;
+          updateSliderPosition();
+        }
+      },
+      prev: () => {
+        if (currentSlide > 0) {
+          currentSlide--;
+          updateSliderPosition();
+        }
+      }
+    };
+  }
+  
+  // Filtering & Sorting
+  function filterUsernames() {
+    const searchTerm = usernameSearch.value.toLowerCase();
+    const lengthFilter = lengthSelect.value;
+    const priceFilter = priceSelect.value;
+    
+    let filtered = allUsernames.filter(item => {
+      // Username search
+      if (searchTerm && !item.username.toLowerCase().includes(searchTerm)) {
+        return false;
+      }
       
-      let filtered = allUsernames.filter(item => {
-        // Username search
-        if (searchTerm && !item.username.toLowerCase().includes(searchTerm)) {
-          return false;
+      // Category filter
+      if (currentFilter !== 'all' && item.category.toLowerCase() !== currentFilter) {
+        return false;
+      }
+      
+      // Length filter
+      if (lengthFilter !== 'all') {
+        if (lengthFilter === '3' && item.charCount !== 3) return false;
+        if (lengthFilter === '4' && item.charCount !== 4) return false;
+        if (lengthFilter === '5' && item.charCount !== 5) return false;
+        if (lengthFilter === '6+' && item.charCount < 6) return false;
+      }
+      
+      // Price filter
+      if (priceFilter !== 'all') {
+        if (priceFilter === 'under500' && item.price >= 500) return false;
+        if (priceFilter === '500-1000' && (item.price < 500 || item.price > 1000)) return false;
+        if (priceFilter === '1000-5000' && (item.price < 1000 || item.price > 5000)) return false;
+        if (priceFilter === 'over5000' && item.price <= 5000) return false;
+      }
+      
+      return true;
+    });
+    
+    // Sort results
+    filtered = sortUsernames(filtered);
+    
+    return filtered;
+  }
+  
+  function sortUsernames(usernames) {
+    switch (currentSort) {
+      case 'price-low':
+        return [...usernames].sort((a, b) => a.price - b.price);
+      case 'price-high':
+        return [...usernames].sort((a, b) => b.price - a.price);
+      case 'length':
+        return [...usernames].sort((a, b) => a.charCount - b.charCount);
+      case 'recent':
+      default:
+        return usernames; // Already sorted by most recent
+    }
+  }
+  
+  function resetFilters() {
+    currentFilter = 'all';
+    currentSort = 'recent';
+    currentPage = 1;
+    isSearching = true; // We're filtering, so set this to true
+    
+    // Reset form inputs
+    usernameSearch.value = '';
+    lengthSelect.value = 'all';
+    priceSelect.value = 'all';
+    sortSelect.value = 'recent';
+    
+    // Reset active tab
+    searchTabs.forEach(tab => {
+      tab.classList.remove('active');
+      if (tab.getAttribute('data-filter') === 'all') {
+        tab.classList.add('active');
+      }
+    });
+    
+    // Display usernames
+    displayUsernames();
+    
+    // Show a toast
+    showToast('Filters Reset', 'Showing all available usernames', 'info');
+  }
+  
+  function updateResultsCount() {
+    if (resultsCount) {
+      resultsCount.textContent = filteredUsernames.length;
+    }
+  }
+  
+  function toggleLoadMoreButton() {
+    if (loadMoreBtn) {
+      if (currentPage * itemsPerPage < filteredUsernames.length) {
+        loadMoreBtn.style.display = 'flex';
+      } else {
+        loadMoreBtn.style.display = 'none';
+      }
+    }
+  }
+  
+  function showLoading(isLoading) {
+    if (loadingSpinner) {
+      if (isLoading) {
+        loadingSpinner.style.display = 'flex';
+        if (cardsContainer) {
+          cardsContainer.style.opacity = '0.5';
         }
-        
-        // Category filter
-        if (currentFilter !== 'all' && item.category.toLowerCase() !== currentFilter) {
-          return false;
+      } else {
+        loadingSpinner.style.display = 'none';
+        if (cardsContainer) {
+          cardsContainer.style.opacity = '1';
         }
-        
-        // Length filter
-        if (lengthFilter !== 'all') {
-          if (lengthFilter === '3' && item.charCount !== 3) return false;
-          if (lengthFilter === '4' && item.charCount !== 4) return false;
-          if (lengthFilter === '5' && item.charCount !== 5) return false;
-          if (lengthFilter === '6+' && item.charCount < 6) return false;
-        }
-        
-        // Price filter
-        if (priceFilter !== 'all') {
-          if (priceFilter === 'under500' && item.price >= 500) return false;
-          if (priceFilter === '500-1000' && (item.price < 500 || item.price > 1000)) return false;
-          if (priceFilter === '1000-5000' && (item.price < 1000 || item.price > 5000)) return false;
-          if (priceFilter === 'over5000' && item.price <= 5000) return false;
-        }
-        
-        return true;
+      }
+    }
+  }
+  
+  // Event Handlers
+  function addBuyNowEventListeners() {
+    const buyButtons = document.querySelectorAll('.buy-now');
+    buyButtons.forEach(button => {
+      button.addEventListener('click', handleBuyNow);
+    });
+  }
+  
+  function handleBuyNow(event) {
+    const button = event.currentTarget;
+    const productId = button.getAttribute('data-id');
+    const username = button.getAttribute('data-username');
+    const price = button.getAttribute('data-price');
+    const category = button.getAttribute('data-category');
+    
+    // Save selected username details to localStorage for the checkout page
+    localStorage.setItem('selectedUsername', JSON.stringify({
+      id: productId,
+      username,
+      price,
+      category
+    }));
+    
+    // Add loading animation to button
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    button.disabled = true;
+    
+    // Redirect to checkout page after a short delay
+    setTimeout(() => {
+      window.location.href = 'checkout.html';
+    }, 500);
+  }
+  
+  // Event Listeners Setup
+  function setupEventListeners() {
+    // Search form
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        isSearching = true;
+        currentPage = 1;
+        displayUsernames();
       });
-      
-      // Sort results
-      filtered = sortUsernames(filtered);
-      
-      return filtered;
     }
     
-    function sortUsernames(usernames) {
-      switch (currentSort) {
-        case 'price-low':
-          return [...usernames].sort((a, b) => a.price - b.price);
-        case 'price-high':
-          return [...usernames].sort((a, b) => b.price - a.price);
-        case 'length':
-          return [...usernames].sort((a, b) => a.charCount - b.charCount);
-        case 'recent':
-        default:
-          return usernames; // Already sorted by most recent
-      }
-    }
-    
-    function resetFilters() {
-      currentFilter = 'all';
-      currentSort = 'recent';
-      currentPage = 1;
-      isSearching = true; // We're filtering, so set this to true
-      
-      // Reset form inputs
-      usernameSearch.value = '';
-      lengthSelect.value = 'all';
-      priceSelect.value = 'all';
-      sortSelect.value = 'recent';
-      
-      // Reset active tab
+    // Category tabs
+    if (searchTabs) {
       searchTabs.forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-filter') === 'all') {
+        tab.addEventListener('click', () => {
+          isSearching = true;
+          searchTabs.forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
-        }
-      });
-      
-      // Display usernames
-      displayUsernames();
-      
-      // Show a toast
-      showToast('Filters Reset', 'Showing all available usernames', 'info');
-    }
-    
-    function updateResultsCount() {
-      if (resultsCount) {
-        resultsCount.textContent = filteredUsernames.length;
-      }
-    }
-    
-    function toggleLoadMoreButton() {
-      if (loadMoreBtn) {
-        if (currentPage * itemsPerPage < filteredUsernames.length) {
-          loadMoreBtn.style.display = 'flex';
-        } else {
-          loadMoreBtn.style.display = 'none';
-        }
-      }
-    }
-    
-    function showLoading(isLoading) {
-      if (loadingSpinner) {
-        if (isLoading) {
-          loadingSpinner.style.display = 'flex';
-          if (cardsContainer) {
-            cardsContainer.style.opacity = '0.5';
-          }
-        } else {
-          loadingSpinner.style.display = 'none';
-          if (cardsContainer) {
-            cardsContainer.style.opacity = '1';
-          }
-        }
-      }
-    }
-    
-    // Event Handlers
-    function addBuyNowEventListeners() {
-      const buyButtons = document.querySelectorAll('.buy-now');
-      buyButtons.forEach(button => {
-        button.addEventListener('click', handleBuyNow);
+          currentFilter = tab.getAttribute('data-filter');
+          currentPage = 1;
+          displayUsernames();
+        });
       });
     }
     
-    function handleBuyNow(event) {
-      const button = event.currentTarget;
-      const productId = button.getAttribute('data-id');
-      const username = button.getAttribute('data-username');
-      const price = button.getAttribute('data-price');
-      const category = button.getAttribute('data-category');
-      
-      // Save selected username details to localStorage for the checkout page
-      localStorage.setItem('selectedUsername', JSON.stringify({
-        id: productId,
-        username,
-        price,
-        category
-      }));
-      
-      // Add loading animation to button
-      const originalContent = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-      button.disabled = true;
-      
-      // Redirect to checkout page after a short delay
-      setTimeout(() => {
-        window.location.href = 'checkout.html';
-      }, 500);
+    // Search input (real-time filtering)
+    if (usernameSearch) {
+      usernameSearch.addEventListener('input', debounce(() => {
+        isSearching = true;
+        currentPage = 1;
+        displayUsernames();
+      }, 500));
     }
     
-    // Event Listeners Setup
-    function setupEventListeners() {
-      // Search form
-      if (searchForm) {
-        searchForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          isSearching = true;
-          currentPage = 1;
-          displayUsernames();
-        });
-      }
-      
-      // Category tabs
-      if (searchTabs) {
-        searchTabs.forEach(tab => {
-          tab.addEventListener('click', () => {
-            isSearching = true;
-            searchTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentFilter = tab.getAttribute('data-filter');
-            currentPage = 1;
-            displayUsernames();
-          });
-        });
-      }
-      
-      // Search input (real-time filtering)
-      if (usernameSearch) {
-        usernameSearch.addEventListener('input', debounce(() => {
-          isSearching = true;
-          currentPage = 1;
-          displayUsernames();
-        }, 500));
-      }
-      
-      // Length and price filters
-      if (lengthSelect) {
-        lengthSelect.addEventListener('change', () => {
-          isSearching = true;
-          currentPage = 1;
-          displayUsernames();
-        });
-      }
-      
-      if (priceSelect) {
-        priceSelect.addEventListener('change', () => {
-          isSearching = true;
-          currentPage = 1;
-          displayUsernames();
-        });
-      }
-      
-      // Sort selector
-      if (sortSelect) {
-        sortSelect.addEventListener('change', () => {
-          isSearching = true;
-          currentSort = sortSelect.value;
-          currentPage = 1;
-          displayUsernames();
-        });
-      }
-      
-      // Load more button
-      if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-          isSearching = true;
-          currentPage++;
-          displayUsernames();
-        });
-      }
-      
-      // Theme toggle
-      if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-      }
-      
-      // Contact form
-      const contactForm = document.querySelector('.contact-form');
-      if (contactForm) {
-        contactForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const name = contactForm.querySelector('#name').value;
-          showToast('Message Sent', `Thank you ${name}, we'll respond shortly!`, 'success');
-          contactForm.reset();
-        });
-      }
-      
-      // Newsletter form
-      const newsletterForm = document.querySelector('.newsletter-form');
-      if (newsletterForm) {
-        newsletterForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          showToast('Subscription Successful', 'You\'ve been added to our newsletter', 'success');
-          newsletterForm.reset();
-        });
-      }
+    // Length and price filters
+    if (lengthSelect) {
+      lengthSelect.addEventListener('change', () => {
+        isSearching = true;
+        currentPage = 1;
+        displayUsernames();
+      });
     }
     
-    // Utilities
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          timeout = null;
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+    if (priceSelect) {
+      priceSelect.addEventListener('change', () => {
+        isSearching = true;
+        currentPage = 1;
+        displayUsernames();
+      });
+    }
+    
+    // Sort selector
+    if (sortSelect) {
+      sortSelect.addEventListener('change', () => {
+        isSearching = true;
+        currentSort = sortSelect.value;
+        currentPage = 1;
+        displayUsernames();
+      });
+    }
+    
+    // Load more button
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        isSearching = true;
+        currentPage++;
+        displayUsernames();
+      });
+    }
+    
+    // Theme toggle
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    // Contact form
+    const contactForm = document.querySelector('.contact-form');
+    if (contactForm) {
+      contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = contactForm.querySelector('#name').value;
+        showToast('Message Sent', `Thank you ${name}, we'll respond shortly!`, 'success');
+        contactForm.reset();
+      });
+    }
+    
+    // Newsletter form
+    const newsletterForm = document.querySelector('.newsletter-form');
+    if (newsletterForm) {
+      newsletterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        showToast('Subscription Successful', 'You\'ve been added to our newsletter', 'success');
+        newsletterForm.reset();
+      });
+    }
+  }
+  
+  // Utilities
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        timeout = null;
+        func(...args);
       };
-    }
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+  
+  // Animate elements when scrolled into view
+  function animateOnScroll() {
+    const elements = document.querySelectorAll('.animate-on-scroll');
     
-    // Animate elements when scrolled into view
-    function animateOnScroll() {
-      const elements = document.querySelectorAll('.animate-on-scroll');
-      
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animated');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, {
-        threshold: 0.1
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animated');
+          observer.unobserve(entry.target);
+        }
       });
-      
-      elements.forEach(element => {
-        observer.observe(element);
-      });
-    }
+    }, {
+      threshold: 0.1
+    });
     
-    // Initialize everything
-    function init() {
-      initTheme();
-      initNavigation();
-      initFaqAccordion();
-      fetchUsernames();
-      setupEventListeners();
-      animateOnScroll();
-    }
-    
-    // Start the application
-    init();
-  });
+    elements.forEach(element => {
+      observer.observe(element);
+    });
+  }
+  
+  // Initialize everything
+  function init() {
+    initTheme();
+    initNavigation();
+    initFaqAccordion();
+    fetchUsernames();
+    setupEventListeners();
+    animateOnScroll();
+  }
+  
+  // Start the application
+  init();
+});
